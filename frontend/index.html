@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Desvie dos Blocos 🎮</title>
+
+<style>
+body {
+  margin: 0;
+  background: linear-gradient(180deg, #0f2027, #203a43, #2c5364);
+  color: white;
+  font-family: Arial;
+  text-align: center;
+}
+
+h1 {
+  margin-top: 10px;
+}
+
+#game {
+  margin: 20px auto;
+  width: 300px;
+  height: 500px;
+  background: #111;
+  border: 3px solid #00f7ff;
+  position: relative;
+  overflow: hidden;
+  border-radius: 10px;
+}
+
+.player {
+  width: 50px;
+  height: 50px;
+  background: #00f7ff;
+  position: absolute;
+  bottom: 10px;
+  left: 125px;
+  border-radius: 8px;
+}
+
+.enemy {
+  width: 50px;
+  height: 50px;
+  background: #ff4d4d;
+  position: absolute;
+  top: 0;
+  border-radius: 8px;
+}
+
+#score {
+  font-size: 20px;
+}
+
+button {
+  padding: 10px 20px;
+  font-size: 16px;
+  background: #00f7ff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+</style>
+</head>
+
+<body>
+
+<h1>🎮 Desvie dos Blocos</h1>
+<p id="score">Pontuação: 0</p>
+<button onclick="startGame()">Começar</button>
+
+<div id="game">
+  <div class="player" id="player"></div>
+</div>
+
+<script>
+let player = document.getElementById("player");
+let game = document.getElementById("game");
+
+let playerX = 125;
+let score = 0;
+let gameRunning = false;
+
+const BACKEND_URL = "https://SEU-BACKEND.onrender.com";
+
+document.addEventListener("keydown", (e) => {
+  if (!gameRunning) return;
+
+  if (e.key === "ArrowLeft" && playerX > 0) {
+    playerX -= 20;
+  }
+  if (e.key === "ArrowRight" && playerX < 250) {
+    playerX += 20;
+  }
+
+  player.style.left = playerX + "px";
+});
+
+function createEnemy() {
+  if (!gameRunning) return;
+
+  let enemy = document.createElement("div");
+  enemy.classList.add("enemy");
+
+  let x = Math.floor(Math.random() * 250);
+  enemy.style.left = x + "px";
+
+  game.appendChild(enemy);
+
+  let y = 0;
+
+  let fall = setInterval(() => {
+    if (!gameRunning) {
+      clearInterval(fall);
+      enemy.remove();
+      return;
+    }
+
+    y += 5;
+    enemy.style.top = y + "px";
+
+    // colisão
+    if (
+      y > 440 &&
+      x < playerX + 50 &&
+      x + 50 > playerX
+    ) {
+      gameRunning = false;
+
+      alert("💀 Game Over! Pontuação: " + score);
+
+      // envia score
+      fetch(BACKEND_URL + "/score", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ score: score })
+      });
+
+      location.reload();
+    }
+
+    if (y > 500) {
+      enemy.remove();
+      score++;
+      document.getElementById("score").innerText = "Pontuação: " + score;
+      clearInterval(fall);
+    }
+  }, 30);
+}
+
+function startGame() {
+  gameRunning = true;
+  setInterval(createEnemy, 1000);
+}
+</script>
+
+</body>
+</html>
